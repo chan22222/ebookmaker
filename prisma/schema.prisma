@@ -1,0 +1,56 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model Project {
+  id          String   @id @default(uuid())
+  name        String
+  content     String   // Markdown content
+  status      String   @default("draft") // draft, analyzing, generating, ready
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  // Generated metadata
+  title       String?
+  subtitle    String?
+  description String?
+  keywords    String?  // JSON array stored as string
+  author      String?
+
+  // Relations
+  images      Image[]
+  analysis    Analysis?
+}
+
+model Analysis {
+  id              String   @id @default(uuid())
+  projectId       String   @unique
+  project         Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  wordCount       Int
+  estimatedPages  Int
+  contentType     String   // fiction, non-fiction, technical, educational
+  tableOfContents String   // JSON array stored as string
+  imagePoints     String   // JSON array of ImageInsertionPoint
+
+  createdAt       DateTime @default(now())
+}
+
+model Image {
+  id          String   @id @default(uuid())
+  projectId   String
+  project     Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  type        String   // illustration, diagram, chart, infographic
+  prompt      String
+  position    String   // JSON: { section, afterParagraph }
+  imageData   String?  // Base64 encoded image or file path
+  status      String   @default("pending") // pending, generating, completed, failed
+
+  createdAt   DateTime @default(now())
+}
